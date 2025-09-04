@@ -1,82 +1,152 @@
-Document RAG System — Overview
+# 📄 Document RAG System
 
-What it is:
-A web app where users upload documents (PDF, images, CSV, DOCX, TXT). We extract text, chunk it, embed with OpenAI, store vectors in Pinecone, and power an interactive chat that answers questions with source-grounded citations.
+> Transform your scattered documents into an intelligent, searchable knowledge base with AI-powered chat and source citations.
 
-Why it matters:
+## 🎯 What it Does
 
-Centralize unstructured docs into a searchable knowledge base
+A web application that allows users to upload documents (PDF, images, CSV, DOCX, TXT), extracts and processes the content, creates embeddings, stores them in a vector database, and provides an interactive chat interface for querying documents with **source-grounded citations**.
 
-Reliable answers with citations (traceability)
+## ✨ Why it Matters
 
-Runs as a simple Next.js app (easy to deploy on Vercel)
+- **🗂️ Centralize Knowledge** — Turn unstructured docs into a searchable knowledge base
+- **🔍 Reliable Answers** — Every response includes citations for full traceability
+- **🚀 Simple Deployment** — Runs as a Next.js app, easily deployable on Vercel
 
-Core Design Decisions
+## 🚀 Quick Start
 
-1. Framework & Runtime
+```bash
+# 1. Clone the repository
+git clone <your-repo-url>
+cd document-rag-system
 
-Next.js 14 (App Router) for unified frontend + serverless APIs
+# 2. Install dependencies
+npm install
 
-Serverless API Routes for upload, extraction, search, chat
+# 3. Set up environment variables
+cp .env.example .env.local
+# Add your OpenAI and Pinecone API keys
 
-TypeScript for correctness and maintainability
+# 4. Run the development server
+npm run dev
 
-2. Document Processing
+# 5. Open http://localhost:3000 and start uploading documents!
+```
 
-PDF: pdf-parse (node) for robust text extraction
+### Environment Variables
 
-Images (PNG/JPEG/SVG): tesseract.js OCR (fallback path)
+```env
+OPENAI_API_KEY=sk-your-openai-key-here
+PINECONE_API_KEY=your-pinecone-key-here
+PINECONE_ENVIRONMENT=your-pinecone-environment
+PINECONE_INDEX_NAME=document-rag-index
+```
 
-CSV: papaparse with basic schema sniffing
+## 🏗️ Architecture Overview
 
-DOCX: mammoth for clean text
+### Core Tech Stack
 
-TXT: direct read
+- **Frontend:** Next.js 14 (App Router) + TypeScript + Tailwind CSS
+- **Backend:** Next.js API Routes (Serverless)
+- **Vector Database:** Pinecone
+- **AI/ML:** OpenAI Embeddings + LangChain.js
+- **UI Components:** shadcn/ui
 
-Output is normalized JSON with metadata (filename, type, content, extraction_date)
+### Document Processing Pipeline
 
-3. Chunking & Embeddings
+```
+[Upload Files] → [Extract Text] → [Chunk Content] → [Create Embeddings] → [Store in Pinecone] → [Ready for Chat]
 
-Chunking: ~1000 tokens, 100-token overlap to preserve context across boundaries
+[User Question] → [Hybrid Search] → [Retrieve Context] → [Generate Answer] → [Return with Citations]
+```
 
-Embedding Model: OpenAI text-embedding-3-small (fast, inexpensive, good semantic recall)
+## 🔧 Core Design Decisions
 
-Vector DB: Pinecone (metadata filters, scalable similarity search)
+### 1. **Framework & Runtime**
 
-Store: documentId, filename, fileType, chunkIndex, content, uploadDate
+- **Next.js 14** with App Router for unified frontend + serverless APIs
+- **TypeScript** for type safety and maintainability
+- **Serverless deployment** for cost efficiency and scalability
 
-4. Retrieval & Chat (RAG)
+### 2. **Document Processing**
 
-Hybrid search (semantic + keyword) to catch exact terms and concepts
+| Format     | Library        | Method                     |
+| ---------- | -------------- | -------------------------- |
+| **PDF**    | `pdf-parse`    | Robust text extraction     |
+| **Images** | `tesseract.js` | OCR processing             |
+| **CSV**    | `papaparse`    | Schema detection + parsing |
+| **DOCX**   | `mammoth`      | Clean text extraction      |
+| **TXT**    | Native         | Direct file reading        |
 
-Rerank + top-k context into the model prompt
+### 3. **Chunking & Embeddings**
 
-Streaming responses with source citations (chunk excerpt + score)
+- **Chunk Size:** ~1000 tokens with 100-token overlap
+- **Model:** OpenAI `text-embedding-3-small` (fast, cost-effective)
+- **Storage:** Pinecone with rich metadata (filename, type, chunk index)
 
-Built with LangChain.js to simplify the retrieval pipeline
+### 4. **Retrieval & Chat (RAG)**
 
-5. UI/UX
+- **Hybrid Search:** Combines semantic similarity + keyword matching
+- **Context Ranking:** Top-k relevant chunks with reranking
+- **Streaming Responses:** Real-time answer generation
+- **Source Citations:** Every answer includes document references
 
-Upload experience: drag-and-drop, type/size validation, progress bars, thumbnails
+### 5. **UI/UX Features**
 
-Document management: list, inspect extracted text, delete, filter
+- 🎯 **Upload:** Drag-and-drop with progress tracking
+- 📋 **Management:** Document list, content preview, deletion
+- 💬 **Chat:** Message history, streaming responses, source chips
+- 🎨 **Design:** Clean, responsive interface with Tailwind CSS
 
-Chat: history, live streaming, document context chips, citations
+### 6. **Privacy & Performance**
 
-Tailwind + shadcn/ui for fast, consistent UI
+- 🔐 API keys stored securely in environment variables
+- ⚡ Optimized payloads to minimize API costs
+- 🗑️ Clear data deletion and local file preview
 
-6. Privacy & Cost
+## 📊 Information Flow
 
-API keys in env files; no secrets on client
+```
+[User Upload] → [Validate & Extract] → [Chunk Text] → [Create Embeddings] → [Store in Pinecone]
+                                                                                      ↓
+[Chat Interface] ← [Generate Response] ← [Build Context] ← [Hybrid Search] ← [User Question]
+```
 
-Minimal payloads to OpenAI (chunked context, not entire docs)
+## 🛠️ API Endpoints
 
-Local preview and clear delete operations
+| Endpoint              | Method     | Purpose                  |
+| --------------------- | ---------- | ------------------------ |
+| `/api/upload`         | POST       | Upload and process files |
+| `/api/documents`      | GET        | List all documents       |
+| `/api/documents/[id]` | GET/DELETE | Document operations      |
+| `/api/chat`           | POST       | Send chat messages       |
+| `/api/search`         | POST       | Search through documents |
 
-## Quick Start
+## 🎮 Try It Out
 
-1. Clone the repo
-2. `npm install`
-3. Set up `.env.local` with your OpenAI/Pinecone keys
-4. `npm run dev`
-5. Upload a document and start chatting!
+**Sample Use Cases:**
+
+- 📚 Upload research papers → Ask about methodology
+- 📊 Upload CSV datasets → Query for trends and insights
+- 📝 Upload meeting notes → Search for action items
+- 📄 Upload manuals → Get step-by-step instructions
+
+## 🚧 Current Limitations
+
+- OCR accuracy depends on image quality
+- Large files (>10MB) may experience processing delays
+- Single-user demo (no authentication implemented)
+- English language optimized
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
