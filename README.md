@@ -73,59 +73,6 @@ Minimal payloads to OpenAI (chunked context, not entire docs)
 
 Local preview and clear delete operations
 
-End-to-End Information Flow
-[User]
-│
-│ Drag & drop files
-▼
-[Upload UI] ──► POST /api/upload
-│ │
-│ ├─ Validate (type, size)
-│ ├─ Extract content (pdf-parse, tesseract, papaparse, mammoth, txt)
-│ └─ Normalize → JSON { content, metadata }
-▼
-[Processing Status UI] <─ GET /api/processing/status/:id
-│
-├─▶ POST /api/embedding/create
-│ ├─ Chunk text (1000 tokens, 100 overlap)
-│ ├─ OpenAI embeddings (text-embedding-3-small)
-│ └─ Upsert to Pinecone (vectors + metadata)
-│
-▼
-[Documents List / Viewer] <─ GET /api/documents & /api/documents/:id
-│
-│ User asks a question
-▼
-[Chat UI] ──► POST /api/chat
-├─ Hybrid search (semantic Pinecone + keyword filter)
-├─ Rerank & select top-k chunks
-├─ Build RAG prompt (with citations & metadata)
-└─ Stream answer back to client
-▼
-[Assistant Response + Source Chips]
-
-Minimal Architecture Diagram (Logical)
-┌──────────────────────────┐
-│ Next.js UI │ (App Router + Tailwind + shadcn/ui)
-│ Upload | Docs | Chat │
-└───────────┬──────────────┘
-│
-▼
-┌──────────────────────────┐
-│ Next.js API Routes │ (/api/upload, /api/documents, /api/chat, /api/search)
-│ - Validation │
-│ - Extraction │
-│ - Embedding pipeline │
-│ - Retrieval + RAG │
-└───────────┬──────────────┘
-│
-┌──────┴───────┐
-▼ ▼
-┌────────────┐ ┌───────────────┐
-│ OpenAI API │ │ Pinecone │
-│ Embeddings │ │ Vector Index │
-└────────────┘ └───────────────┘
-
 ## Quick Start
 
 1. Clone the repo
