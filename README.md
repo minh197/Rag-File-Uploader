@@ -1,5 +1,7 @@
 # 📄 Document RAG System
 
+# Live Demo: https://rag-file-uploader-c7djxdhrj-lees-projects-dd8d5cb9.vercel.app/
+
 > Transform your scattered documents into an intelligent, searchable knowledge base with AI-powered chat and source citations.
 
 ## 🎯 What it Does
