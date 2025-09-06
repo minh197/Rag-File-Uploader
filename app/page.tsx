@@ -2,6 +2,7 @@
 import UploadDropzone from "../components/UploadDropZone";
 import DocumentsList from "../components/DocumentsList";
 import SearchBox from "../components/SearchBox";
+import ChatBox from "../components/ChatBox";
 
 /**
  *This page mixes a client-side uploader (mutates data) and a server-rendered list (reads data).
@@ -24,6 +25,7 @@ export default function Home() {
     <main className="max-w-3xl mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-bold">Document RAG System</h1>
       <SearchBox />
+      <ChatBox />
       <UploadDropzone
         onUploaded={() => document.dispatchEvent(new Event("docs:reload"))}
       />

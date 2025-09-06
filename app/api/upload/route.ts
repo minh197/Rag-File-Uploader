@@ -134,6 +134,23 @@ export async function POST(req: Request) {
         processingStatus: "embedding", // Ready for next stage (vector embeddings)
       });
       console.log("✅ Database updated successfully");
+
+      // Auto-embed: Fire-and-forget call to embedding route
+      // This reduces the window where documents can be lost due to server restarts
+      try {
+        const appUrl =
+          process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        console.log("🚀 Auto-starting embedding process...");
+        fetch(`${appUrl}/api/embedding/create`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ documentId: id }),
+        }).catch((err) => {
+          console.warn("⚠️ Auto-embedding failed (non-blocking):", err.message);
+        });
+      } catch (err) {
+        console.warn("⚠️ Auto-embedding setup failed (non-blocking):", err);
+      }
     } catch (e: unknown) {
       // ERROR HANDLING
       // WHY: File processing can fail for many reasons:
