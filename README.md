@@ -6,6 +6,15 @@
 
 A web application that allows users to upload documents (PDF, images, CSV, DOCX, TXT), extracts and processes the content, creates embeddings, stores them in a vector database, and provides an interactive chat interface for querying documents with **source-grounded citations**.
 
+## ✨ Key Features
+
+- 🚀 **Auto-Processing Pipeline** — Documents automatically progress from upload → extraction → embedding → completion
+- 🔄 **Real-time Status Tracking** — Color-coded badges show processing status with live updates
+- 💬 **AI Chat Interface** — Interactive Q&A with streaming responses and source citations
+- 🔍 **Hybrid Search** — Combines semantic similarity with keyword matching
+- 📱 **Responsive Design** — Works seamlessly on desktop and mobile devices
+- ⚡ **Performance Optimized** — Efficient polling, memory leak prevention, and API optimization
+
 ## ✨ Why it Matters
 
 - **🗂️ Centralize Knowledge** — Turn unstructured docs into a searchable knowledge base
@@ -54,8 +63,21 @@ PINECONE_INDEX_NAME=document-rag-index
 ### Document Processing Pipeline
 
 ```
-[Upload Files] → [Extract Text] → [Chunk Content] → [Create Embeddings] → [Store in Pinecone] → [Ready for Chat]
+📁 Upload → 🟡 Extracting → 🟣 Embedding → 🟢 Completed → 💬 Ready for Chat
+    ↓           ↓              ↓              ↓              ↓
+Auto-embed  Auto-embed    Auto-embed    Status badges   AI Chat
+```
 
+**Status Flow:**
+
+- 🟡 **Extracting** — Text extraction in progress
+- 🟣 **Embedding** — Creating vector embeddings
+- 🟢 **Completed** — Ready for search and chat
+- 🔴 **Error** — Processing failed with error details
+
+**Chat Flow:**
+
+```
 [User Question] → [Hybrid Search] → [Retrieve Context] → [Generate Answer] → [Return with Citations]
 ```
 
@@ -71,10 +93,12 @@ PINECONE_INDEX_NAME=document-rag-index
 
 | Format     | Library        | Method                     |
 | ---------- | -------------- | -------------------------- |
-| **PDF**    | `pdf-parse`    | Robust text extraction     |        |
+| **PDF**    | `pdf-parse`    | Robust text extraction     |
+| **Images** | `tesseract.js` | OCR with CDN worker paths  |
 | **CSV**    | `papaparse`    | Schema detection + parsing |
 | **DOCX**   | `mammoth`      | Clean text extraction      |
 | **TXT**    | Native         | Direct file reading        |
+| **SVG**    | XML parser     | Text extraction from XML   |
 
 ### 3. **Chunking & Embeddings**
 
@@ -91,10 +115,11 @@ PINECONE_INDEX_NAME=document-rag-index
 
 ### 5. **UI/UX Features**
 
-- 🎯 **Upload:** Drag-and-drop with progress tracking
-- 📋 **Management:** Document list, content preview, deletion
-- 💬 **Chat:** Message history, streaming responses, source chips
-- 🎨 **Design:** Clean, responsive interface with Tailwind CSS
+- 🎯 **Upload:** Drag-and-drop with progress tracking and auto-processing
+- 📋 **Management:** Document list with real-time status badges, content preview, deletion
+- 💬 **Chat:** Interactive chat interface with streaming responses and source citations
+- 🔄 **Real-time Updates:** Automatic polling during processing with memory leak prevention
+- 🎨 **Design:** Clean, responsive interface with Tailwind CSS and status indicators
 
 ### 6. **Privacy & Performance**
 
@@ -112,13 +137,15 @@ PINECONE_INDEX_NAME=document-rag-index
 
 ## 🛠️ API Endpoints
 
-| Endpoint              | Method     | Purpose                  |
-| --------------------- | ---------- | ------------------------ |
-| `/api/upload`         | POST       | Upload and process files |
-| `/api/documents`      | GET        | List all documents       |
-| `/api/documents/[id]` | GET/DELETE | Document operations      |
-| `/api/chat`           | POST       | Send chat messages       |
-| `/api/search`         | POST       | Search through documents |
+| Endpoint                | Method     | Purpose                               |
+| ----------------------- | ---------- | ------------------------------------- |
+| `/api/upload`           | POST       | Upload and process files (auto-embed) |
+| `/api/documents`        | GET        | List all documents with status        |
+| `/api/documents/[id]`   | GET/DELETE | Document operations                   |
+| `/api/embedding/create` | POST       | Create embeddings (auto-triggered)    |
+| `/api/chat`             | POST       | Send chat messages with streaming     |
+| `/api/search`           | POST       | Search through documents              |
+| `/api/health`           | GET        | System health check                   |
 
 ## 🎮 Try It Out
 
@@ -128,5 +155,26 @@ PINECONE_INDEX_NAME=document-rag-index
 - 📊 Upload CSV datasets → Query for trends and insights
 - 📝 Upload meeting notes → Search for action items
 - 📄 Upload manuals → Get step-by-step instructions
+- 🖼️ Upload images with text → OCR extraction and search
+
+## 🚀 Recent Updates
+
+### Auto-Processing Pipeline
+
+- **Auto-Embedding**: Documents automatically progress from upload → extraction → embedding → completion
+- **Real-time Status**: Color-coded badges show processing status with live updates
+- **Memory Optimization**: Fixed polling memory leaks and API spam issues
+
+### Enhanced File Support
+
+- **Image OCR**: Full support for PNG, JPEG images with tesseract.js
+- **Robust Processing**: Handles PDF, DOCX, CSV, TXT, SVG files reliably
+- **Error Handling**: Graceful failure handling with clear error messages
+
+### Performance Improvements
+
+- **Efficient Polling**: Optimized real-time updates without memory leaks
+- **API Optimization**: Reduced unnecessary API calls and improved response times
+- **Streaming Chat**: Real-time chat responses with source citations
 
 ---
