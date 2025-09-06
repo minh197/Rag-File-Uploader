@@ -38,7 +38,7 @@ function StatusBadge({ status }: { status: string }) {
 
   const getTooltip = (status: string) => {
     if (status === "embedding") {
-      return "Embedding pending (enable Step 5 to complete)";
+      return "Embedding pending";
     }
     return null;
   };

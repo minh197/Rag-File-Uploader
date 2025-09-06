@@ -1,4 +1,6 @@
 // app/api/documents/[id]/route.ts
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { store } from "../../../../lib/store";
 
