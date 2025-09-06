@@ -31,7 +31,7 @@ export type DocumentRecord = {
   processingStatus: ProcessingStatus;
   chunkCount?: number;
   errorMessage?: string;
-  metadata?: Record<string, any>;
+  metadata: string; // FIXED: Always a JSON string, never an object
 };
 
 // If default KV_* envs are present use `kv`; else fall back to Upstash envs
@@ -45,6 +45,47 @@ const client =
 
 const SET_KEY = "docs:set";
 const DOC_KEY = (id: string) => `doc:${id}`;
+
+// Helper function to safely parse JSON metadata
+const safeParseMetadata = (
+  metadata: string | undefined
+): Record<string, any> => {
+  if (!metadata) return {};
+
+  try {
+    // Handle the corrupted "[object Object]" case
+    if (metadata === "[object Object]") {
+      console.warn("Found corrupted metadata, returning empty object");
+      return {};
+    }
+
+    return JSON.parse(metadata);
+  } catch (error) {
+    console.warn("Failed to parse metadata:", metadata, "Error:", error);
+    return {};
+  }
+};
+
+// Helper function to safely stringify metadata
+const safeStringifyMetadata = (metadata: any): string => {
+  if (typeof metadata === "string") {
+    // Already a string, verify it's valid JSON
+    try {
+      JSON.parse(metadata);
+      return metadata;
+    } catch {
+      console.warn("Invalid JSON string in metadata, using empty object");
+      return JSON.stringify({});
+    }
+  }
+
+  if (typeof metadata === "object" && metadata !== null) {
+    return JSON.stringify(metadata);
+  }
+
+  // For any other type, default to empty object
+  return JSON.stringify({});
+};
 
 export const store = {
   async list(): Promise<DocumentRecord[]> {
@@ -66,7 +107,7 @@ export const store = {
         processingStatus: r.processingStatus as ProcessingStatus,
         chunkCount: r.chunkCount ? Number(r.chunkCount) : undefined,
         errorMessage: r.errorMessage || undefined,
-        metadata: r.metadata ? JSON.parse(r.metadata) : undefined,
+        metadata: r.metadata || JSON.stringify({}), // Always return a string
       }));
   },
 
@@ -83,7 +124,7 @@ export const store = {
       processingStatus: r.processingStatus as ProcessingStatus,
       chunkCount: r.chunkCount ? Number(r.chunkCount) : undefined,
       errorMessage: (r.errorMessage as string) || undefined,
-      metadata: r.metadata ? JSON.parse(r.metadata as string) : undefined,
+      metadata: r.metadata ? (r.metadata as string) : JSON.stringify({}), // Always return a string
     };
   },
 
@@ -101,7 +142,8 @@ export const store = {
       ...(doc.chunkCount !== undefined &&
         doc.chunkCount !== null && { chunkCount: String(doc.chunkCount) }),
       ...(doc.errorMessage && { errorMessage: doc.errorMessage }),
-      ...(doc.metadata && { metadata: JSON.stringify(doc.metadata) }),
+      // FIXED: Always ensure metadata is a valid JSON string
+      metadata: safeStringifyMetadata(doc.metadata),
     });
 
     console.log("Payload being stored:", payload); // Debug log
@@ -129,7 +171,8 @@ export const store = {
       ...(next.chunkCount !== undefined &&
         next.chunkCount !== null && { chunkCount: String(next.chunkCount) }),
       ...(next.errorMessage && { errorMessage: next.errorMessage }),
-      ...(next.metadata && { metadata: JSON.stringify(next.metadata) }),
+      // FIXED: Always ensure metadata is a valid JSON string
+      metadata: safeStringifyMetadata(next.metadata),
     });
 
     console.log("Update payload being stored:", payload); // Debug log
@@ -141,4 +184,23 @@ export const store = {
     await client.del(DOC_KEY(id));
     await client.srem(SET_KEY, id);
   },
+};
+
+// Helper functions for consumers who need to work with metadata as objects
+export const getDocumentWithParsedMetadata = async (id: string) => {
+  const doc = await store.get(id);
+  if (!doc) return undefined;
+
+  return {
+    ...doc,
+    metadata: safeParseMetadata(doc.metadata),
+  };
+};
+
+export const listDocumentsWithParsedMetadata = async () => {
+  const docs = await store.list();
+  return docs.map((doc) => ({
+    ...doc,
+    metadata: safeParseMetadata(doc.metadata),
+  }));
 };

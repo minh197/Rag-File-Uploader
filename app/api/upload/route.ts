@@ -106,8 +106,19 @@ export async function POST(req: Request) {
       fileSize, // Size for storage management
       uploadDate: new Date().toISOString(), // When upload occurred (ISO 8601 format)
       processingStatus: "extracting", // Current processing stage
-      metadata: {}, // Empty object for future extensions
+      metadata: JSON.stringify({}), // FIXED: Explicitly stringify empty object
     };
+
+    // Debug log to verify the payload structure
+    console.log("Payload being stored:", {
+      id: base.id,
+      filename: base.filename,
+      fileType: base.fileType,
+      fileSize: base.fileSize.toString(),
+      uploadDate: base.uploadDate,
+      processingStatus: base.processingStatus,
+      metadata: base.metadata, // Should be '{}' not '[object Object]'
+    });
 
     // PERSIST TO DATABASE/STORE
     // WHY: Create record immediately so we can update status during processing
@@ -239,25 +250,3 @@ export async function POST(req: Request) {
     { status: 201 }
   );
 }
-
-/**
- * OVERALL API FLOW SUMMARY:
- *
- * 1. CLIENT REQUEST: POST with multipart/form-data containing files
- * 2. PARSE: Extract files from form data
- * 3. VALIDATE: Check file types and sizes
- * 4. PROCESS EACH FILE:
- *    a. Create database record with 'extracting' status
- *    b. Convert to Buffer and detect file type
- *    c. Extract text using appropriate method
- *    d. Update record with extracted content and 'embedding' status
- *    e. Handle errors by updating status and continuing
- * 5. RESPOND: Return created documents and any errors
- *
- * DESIGN PRINCIPLES:
- * - Fail fast: Validate early to avoid wasted processing
- * - Fail gracefully: Process each file independently
- * - Transparency: Return detailed success/error information
- * - Idempotency: Safe to retry failed uploads
- * - Status tracking: Database always reflects current state
- */
