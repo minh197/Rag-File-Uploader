@@ -1,3 +1,4 @@
+// lib/types.ts
 export type ProcessingStatus =
   | "uploading"
   | "extracting"
@@ -14,7 +15,11 @@ export interface DocumentRecord {
   processingStatus: ProcessingStatus;
   extractedContent?: string;
   chunkCount?: number;
-  metadata?: Record<string, unknown>;
+
+  // DB layer stores this as a JSON string; callers may omit it.
+  // The store will safely stringify/parse as needed.
+  metadata?: string;
+
   errorMessage?: string;
 }
 

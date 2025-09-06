@@ -1,5 +1,6 @@
 // lib/store.ts
 import { kv, createClient } from "@vercel/kv";
+import type { DocumentRecord, ProcessingStatus } from "./types";
 
 // Enhanced clean function to handle all problematic values
 const clean = (obj: Record<string, unknown>) =>
@@ -13,26 +14,6 @@ const clean = (obj: Record<string, unknown>) =>
         !(typeof v === "string" && v === "undefined") // Filter string "undefined"
     )
   );
-
-export type ProcessingStatus =
-  | "uploading"
-  | "extracting"
-  | "embedding"
-  | "completed"
-  | "error";
-
-export type DocumentRecord = {
-  id: string;
-  filename: string;
-  fileType: string;
-  fileSize: number;
-  uploadDate: string; // ISO string
-  extractedContent?: string;
-  processingStatus: ProcessingStatus;
-  chunkCount?: number;
-  errorMessage?: string;
-  metadata: string; // FIXED: Always a JSON string, never an object
-};
 
 // If default KV_* envs are present use `kv`; else fall back to Upstash envs
 const client =
@@ -51,14 +32,11 @@ const safeParseMetadata = (
   metadata: string | undefined
 ): Record<string, any> => {
   if (!metadata) return {};
-
   try {
-    // Handle the corrupted "[object Object]" case
     if (metadata === "[object Object]") {
       console.warn("Found corrupted metadata, returning empty object");
       return {};
     }
-
     return JSON.parse(metadata);
   } catch (error) {
     console.warn("Failed to parse metadata:", metadata, "Error:", error);
@@ -69,21 +47,17 @@ const safeParseMetadata = (
 // Helper function to safely stringify metadata
 const safeStringifyMetadata = (metadata: any): string => {
   if (typeof metadata === "string") {
-    // Already a string, verify it's valid JSON
     try {
-      JSON.parse(metadata);
+      JSON.parse(metadata); // verify it's valid JSON
       return metadata;
     } catch {
       console.warn("Invalid JSON string in metadata, using empty object");
       return JSON.stringify({});
     }
   }
-
   if (typeof metadata === "object" && metadata !== null) {
     return JSON.stringify(metadata);
   }
-
-  // For any other type, default to empty object
   return JSON.stringify({});
 };
 
@@ -94,6 +68,7 @@ export const store = {
     const pipe = client.pipeline();
     ids.forEach((id) => pipe.hgetall(DOC_KEY(id)));
     const rows = (await pipe.exec()) as any[];
+
     return rows
       .map((r) => r || null)
       .filter(Boolean)
@@ -107,7 +82,8 @@ export const store = {
         processingStatus: r.processingStatus as ProcessingStatus,
         chunkCount: r.chunkCount ? Number(r.chunkCount) : undefined,
         errorMessage: r.errorMessage || undefined,
-        metadata: r.metadata || JSON.stringify({}), // Always return a string
+        // Always return a string (valid JSON) even if the stored value is missing/corrupt
+        metadata: r.metadata || JSON.stringify({}),
       }));
   },
 
@@ -124,30 +100,27 @@ export const store = {
       processingStatus: r.processingStatus as ProcessingStatus,
       chunkCount: r.chunkCount ? Number(r.chunkCount) : undefined,
       errorMessage: (r.errorMessage as string) || undefined,
-      metadata: r.metadata ? (r.metadata as string) : JSON.stringify({}), // Always return a string
+      metadata: r.metadata ? (r.metadata as string) : JSON.stringify({}),
     };
   },
 
   async add(doc: DocumentRecord) {
-    // More explicit handling of optional fields
     const payload = clean({
       id: doc.id,
       filename: doc.filename,
       fileType: doc.fileType,
       fileSize: String(doc.fileSize),
       uploadDate: doc.uploadDate,
-      // Only include these fields if they have actual values
       ...(doc.extractedContent && { extractedContent: doc.extractedContent }),
       processingStatus: doc.processingStatus,
       ...(doc.chunkCount !== undefined &&
         doc.chunkCount !== null && { chunkCount: String(doc.chunkCount) }),
       ...(doc.errorMessage && { errorMessage: doc.errorMessage }),
-      // FIXED: Always ensure metadata is a valid JSON string
+      // Ensure metadata is a valid JSON string, even if doc.metadata is undefined
       metadata: safeStringifyMetadata(doc.metadata),
     });
 
-    console.log("Payload being stored:", payload); // Debug log
-
+    console.log("Payload being stored:", payload);
     await client.hset(DOC_KEY(doc.id), payload);
     await client.sadd(SET_KEY, doc.id);
   },
@@ -158,25 +131,21 @@ export const store = {
 
     const next: DocumentRecord = { ...curr, ...patch };
 
-    // More explicit handling of optional fields
     const payload = clean({
       id: next.id,
       filename: next.filename,
       fileType: next.fileType,
       fileSize: String(next.fileSize),
       uploadDate: next.uploadDate,
-      // Only include these fields if they have actual values
       ...(next.extractedContent && { extractedContent: next.extractedContent }),
       processingStatus: next.processingStatus,
       ...(next.chunkCount !== undefined &&
         next.chunkCount !== null && { chunkCount: String(next.chunkCount) }),
       ...(next.errorMessage && { errorMessage: next.errorMessage }),
-      // FIXED: Always ensure metadata is a valid JSON string
       metadata: safeStringifyMetadata(next.metadata),
     });
 
-    console.log("Update payload being stored:", payload); // Debug log
-
+    console.log("Update payload being stored:", payload);
     await client.hset(DOC_KEY(id), payload);
   },
 
@@ -186,15 +155,11 @@ export const store = {
   },
 };
 
-// Helper functions for consumers who need to work with metadata as objects
+// Helper functions for consumers who need metadata as objects
 export const getDocumentWithParsedMetadata = async (id: string) => {
   const doc = await store.get(id);
   if (!doc) return undefined;
-
-  return {
-    ...doc,
-    metadata: safeParseMetadata(doc.metadata),
-  };
+  return { ...doc, metadata: safeParseMetadata(doc.metadata) };
 };
 
 export const listDocumentsWithParsedMetadata = async () => {
