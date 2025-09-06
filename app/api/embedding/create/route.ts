@@ -39,11 +39,24 @@ export async function POST(req: Request) {
     // Determine which documents to process:
     // - If documentId provided: process only that document
     // - Otherwise: process all documents with 'embedding' status
-    const targets: DocumentRecord[] = documentId
-      ? store.get(documentId)
-        ? [store.get(documentId)!] // Non-null assertion since we checked existence
-        : []
-      : store.list().filter((d) => d.processingStatus === "embedding");
+    let targets: DocumentRecord[] = [];
+    if (documentId) {
+      const one = await store.get(documentId);
+      if (one) targets = [one];
+    } else {
+      const all = await store.list();
+      targets = all.filter((d) => d.processingStatus === "embedding");
+    }
+
+    if (!targets.length) {
+      return NextResponse.json(
+        {
+          message:
+            'No documents to embed (pass documentId or ensure status === "embedding")',
+        },
+        { status: 200 }
+      );
+    }
 
     // Return early if no documents found to process
     if (!targets.length) {

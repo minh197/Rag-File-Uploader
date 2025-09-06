@@ -112,7 +112,7 @@ export async function POST(req: Request) {
     // PERSIST TO DATABASE/STORE
     // WHY: Create record immediately so we can update status during processing
     // If processing fails, we still have record of the attempt
-    store.create(base);
+    await store.add(base);
     console.log(`🔄 Processing file: ${filename} (${fileType})`);
 
     // TEXT EXTRACTION PROCESS (wrapped in try-catch for error handling)
@@ -174,7 +174,7 @@ export async function POST(req: Request) {
 
     // SUCCESS: Add to created array
     // Get updated record from store (includes extractedContent, etc.)
-    created.push(store.get(id)!); // ! asserts non-null (we just created it)
+    created.push(await store.get(id)!); // ! asserts non-null (we just created it)
   }
 
   // RESPONSE GENERATION
