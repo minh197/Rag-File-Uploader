@@ -1,14 +1,16 @@
 // lib/store.ts
 import { kv, createClient } from "@vercel/kv";
 
-// lib/store.ts (top-level, near other helpers)
+// Enhanced clean function to handle all problematic values
 const clean = (obj: Record<string, unknown>) =>
   Object.fromEntries(
     Object.entries(obj).filter(
       ([, v]) =>
         v !== undefined &&
         v !== null &&
-        !(typeof v === "number" && Number.isNaN(v))
+        v !== "" && // Also filter empty strings if needed
+        !(typeof v === "number" && Number.isNaN(v)) &&
+        !(typeof v === "string" && v === "undefined") // Filter string "undefined"
     )
   );
 
@@ -86,18 +88,23 @@ export const store = {
   },
 
   async add(doc: DocumentRecord) {
+    // More explicit handling of optional fields
     const payload = clean({
       id: doc.id,
       filename: doc.filename,
       fileType: doc.fileType,
       fileSize: String(doc.fileSize),
       uploadDate: doc.uploadDate,
-      extractedContent: doc.extractedContent, // will be omitted if undefined
+      // Only include these fields if they have actual values
+      ...(doc.extractedContent && { extractedContent: doc.extractedContent }),
       processingStatus: doc.processingStatus,
-      chunkCount: doc.chunkCount != null ? String(doc.chunkCount) : undefined,
-      errorMessage: doc.errorMessage,
-      metadata: doc.metadata ? JSON.stringify(doc.metadata) : undefined,
+      ...(doc.chunkCount !== undefined &&
+        doc.chunkCount !== null && { chunkCount: String(doc.chunkCount) }),
+      ...(doc.errorMessage && { errorMessage: doc.errorMessage }),
+      ...(doc.metadata && { metadata: JSON.stringify(doc.metadata) }),
     });
+
+    console.log("Payload being stored:", payload); // Debug log
 
     await client.hset(DOC_KEY(doc.id), payload);
     await client.sadd(SET_KEY, doc.id);
@@ -109,18 +116,23 @@ export const store = {
 
     const next: DocumentRecord = { ...curr, ...patch };
 
+    // More explicit handling of optional fields
     const payload = clean({
       id: next.id,
       filename: next.filename,
       fileType: next.fileType,
       fileSize: String(next.fileSize),
       uploadDate: next.uploadDate,
-      extractedContent: next.extractedContent,
+      // Only include these fields if they have actual values
+      ...(next.extractedContent && { extractedContent: next.extractedContent }),
       processingStatus: next.processingStatus,
-      chunkCount: next.chunkCount != null ? String(next.chunkCount) : undefined,
-      errorMessage: next.errorMessage,
-      metadata: next.metadata ? JSON.stringify(next.metadata) : undefined,
+      ...(next.chunkCount !== undefined &&
+        next.chunkCount !== null && { chunkCount: String(next.chunkCount) }),
+      ...(next.errorMessage && { errorMessage: next.errorMessage }),
+      ...(next.metadata && { metadata: JSON.stringify(next.metadata) }),
     });
+
+    console.log("Update payload being stored:", payload); // Debug log
 
     await client.hset(DOC_KEY(id), payload);
   },
