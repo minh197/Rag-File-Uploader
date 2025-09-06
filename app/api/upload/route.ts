@@ -112,8 +112,16 @@ export async function POST(req: Request) {
     // PERSIST TO DATABASE/STORE
     // WHY: Create record immediately so we can update status during processing
     // If processing fails, we still have record of the attempt
-    await store.add(base);
-    console.log(`🔄 Processing file: ${filename} (${fileType})`);
+    try {
+      await store.add(base);
+      console.log(`🔄 Processing file: ${filename} (${fileType})`);
+    } catch (e: unknown) {
+      const reason =
+        e instanceof Error ? e.message : "Failed to create document record";
+      console.error(`❌ Failed to create record for ${filename}:`, reason);
+      errors.push({ filename, reason });
+      continue; // Skip to next file
+    }
 
     // TEXT EXTRACTION PROCESS (wrapped in try-catch for error handling)
     try {
@@ -129,7 +137,8 @@ export async function POST(req: Request) {
       console.log(`✅ Extracted ${text.length} characters`);
 
       console.log("💾 Updating database...");
-      store.update(id, {
+      // CRITICAL FIX: Added missing await
+      await store.update(id, {
         extractedContent: text, // The extracted text content
         processingStatus: "embedding", // Ready for next stage (vector embeddings)
       });
@@ -162,10 +171,18 @@ export async function POST(req: Request) {
       console.error(`❌ Extraction failed for ${filename}:`, reason);
 
       // Update database record with error status
-      store.update(id, {
-        processingStatus: "error",
-        errorMessage: reason,
-      });
+      try {
+        // CRITICAL FIX: Added missing await
+        await store.update(id, {
+          processingStatus: "error",
+          errorMessage: reason,
+        });
+      } catch (updateError) {
+        console.error(
+          `❌ Failed to update error status for ${filename}:`,
+          updateError
+        );
+      }
 
       // Add to errors array for response
       errors.push({ filename, reason });
@@ -174,7 +191,27 @@ export async function POST(req: Request) {
 
     // SUCCESS: Add to created array
     // Get updated record from store (includes extractedContent, etc.)
-    created.push(await store.get(id)!); // ! asserts non-null (we just created it)
+    try {
+      // CRITICAL FIX: Proper error handling instead of non-null assertion
+      const updatedDoc = await store.get(id);
+      if (updatedDoc) {
+        created.push(updatedDoc);
+      } else {
+        console.error(`❌ Could not retrieve updated document ${id}`);
+        errors.push({
+          filename,
+          reason: "Failed to retrieve updated document",
+        });
+      }
+    } catch (e) {
+      const reason =
+        e instanceof Error ? e.message : "Failed to retrieve document";
+      console.error(
+        `❌ Failed to get updated document for ${filename}:`,
+        reason
+      );
+      errors.push({ filename, reason });
+    }
   }
 
   // RESPONSE GENERATION
