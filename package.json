@@ -27,7 +27,9 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@pinecone-database/pinecone": "^6.1.2",
     "mammoth": "^1.10.0",
+    "openai": "^5.19.1",
     "papaparse": "^5.5.3",
     "pdf-parse": "^1.1.1",
     "react-dropzone": "^14.3.8",
