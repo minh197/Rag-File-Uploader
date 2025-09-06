@@ -22,7 +22,9 @@ export default function Home() {
   return (
     <main className="max-w-3xl mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-bold">Document RAG System</h1>
-      <UploadDropzone onUploaded={() => {}} />
+      <UploadDropzone
+        onUploaded={() => document.dispatchEvent(new Event("docs:reload"))}
+      />
       <DocumentsList />
     </main>
   );

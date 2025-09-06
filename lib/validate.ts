@@ -7,9 +7,9 @@ export const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10MB
 // Extensions are lowercase to ensure case-insensitive matching.
 export const ALLOWED_EXT = new Set([
   "pdf", // PDF documents
-  "png", // PNG images
-  "jpg", // JPEG images (common variant)
-  "jpeg", // JPEG images (alternate extension)
+  // "png", // PNG images - temporarily disabled (tesseract.js issues)
+  // "jpg", // JPEG images (common variant) - temporarily disabled (tesseract.js issues)
+  // "jpeg", // JPEG images (alternate extension) - temporarily disabled (tesseract.js issues)
   "svg", // Scalable Vector Graphics
   "txt", // Plain text files
   "csv", // Comma-separated values files
@@ -21,8 +21,8 @@ export const ALLOWED_EXT = new Set([
 // Using a Set ensures efficient lookup for validation.
 export const ALLOWED_MIME = new Set([
   "application/pdf", // Matches .pdf
-  "image/png", // Matches .png
-  "image/jpeg", // Matches .jpg or .jpeg
+  // "image/png", // Matches .png - temporarily disabled (tesseract.js issues)
+  // "image/jpeg", // Matches .jpg or .jpeg - temporarily disabled (tesseract.js issues)
   "image/svg+xml", // Matches .svg
   "text/plain", // Matches .txt
   "text/csv", // Matches .csv

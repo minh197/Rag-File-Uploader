@@ -29,8 +29,8 @@ export default function UploadDropzone({ onUploaded }: Props) {
           );
           onUploaded?.();
         }
-      } catch (e: any) {
-        setMsg(e?.message || "Upload error");
+      } catch (e: unknown) {
+        setMsg(e instanceof Error ? e.message : "Upload error");
       } finally {
         setBusy(false);
       }
@@ -44,7 +44,7 @@ export default function UploadDropzone({ onUploaded }: Props) {
     maxSize: 10 * 1024 * 1024,
     accept: {
       "application/pdf": [".pdf"],
-      "image/*": [".png", ".jpg", ".jpeg", ".svg"],
+      "image/svg+xml": [".svg"],
       "text/plain": [".txt"],
       "text/csv": [".csv"],
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
@@ -65,7 +65,10 @@ export default function UploadDropzone({ onUploaded }: Props) {
           Drag & drop files here, or click to select
         </p>
         <p className="text-sm text-gray-500">
-          PDF, PNG, JPEG, SVG, TXT, CSV, DOCX · ≤ 10MB each
+          PDF, SVG, TXT, CSV, DOCX · ≤ 10MB each
+        </p>
+        <p className="text-xs text-orange-600 mt-1">
+          Note: Image OCR temporarily disabled
         </p>
       </div>
       {msg && <p className="text-sm text-gray-700">{msg}</p>}

@@ -14,7 +14,7 @@ export interface DocumentRecord {
   processingStatus: ProcessingStatus;
   extractedContent?: string;
   chunkCount?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   errorMessage?: string;
 }
 
