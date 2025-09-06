@@ -1,28 +1,37 @@
 // app/api/documents/[id]/route.ts
 export const runtime = "nodejs";
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { store } from "../../../../lib/store";
 
 type Params = { params: { id: string } };
 
 // GET /api/documents/:id
-export async function GET(_req: Request, { params }: Params) {
-  const doc = await store.get(params.id);
+export async function GET(
+  _req: NextRequest,
+  ctx: RouteContext<"/api/documents/[id]">
+) {
+  const { id } = await ctx.params;
+
+  const doc = await store.get(id);
   if (!doc) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  // ✅ hide only the large text; keep processingStatus & chunkCount
-  const { extractedContent, ...rest } = doc;
+  const { extractedContent, ...rest } = doc; // hide large text payload
   return NextResponse.json(rest, { status: 200 });
 }
 
 // DELETE /api/documents/:id
-export async function DELETE(_req: Request, { params }: Params) {
-  const doc = await store.get(params.id);
+export async function DELETE(
+  _req: NextRequest,
+  ctx: RouteContext<"/api/documents/[id]">
+) {
+  const { id } = await ctx.params;
+
+  const doc = await store.get(id);
   if (!doc) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  store.delete(params.id);
+  await store.delete(id); // ← store is async now
   return new Response(null, { status: 204 });
 }
