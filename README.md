@@ -71,8 +71,7 @@ PINECONE_INDEX_NAME=document-rag-index
 
 | Format     | Library        | Method                     |
 | ---------- | -------------- | -------------------------- |
-| **PDF**    | `pdf-parse`    | Robust text extraction     |
-| **Images** | `tesseract.js` | OCR processing             |
+| **PDF**    | `pdf-parse`    | Robust text extraction     |        |
 | **CSV**    | `papaparse`    | Schema detection + parsing |
 | **DOCX**   | `mammoth`      | Clean text extraction      |
 | **TXT**    | Native         | Direct file reading        |
